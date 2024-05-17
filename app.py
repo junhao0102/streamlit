@@ -50,7 +50,7 @@ def select(name):
                     "phone": data[0][1],
                     "email": data[0][2],
                     "address": data[0][3],
-                }
+                }   
 
 
 def insert(name, phone, email, address):

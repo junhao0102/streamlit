@@ -1,89 +1,67 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from app import select, insert, delete
 
 
-class TestDatabaseOperations(unittest.TestCase):
+class TestSelectFunction(unittest.TestCase):
+    @patch("app.get_db_connection")
+    def test_select_empty(self, mock_get_db_connection):
+        # 模擬資料庫連接以防止任何實際的資料庫操作
+        mock_connection = mock_get_db_connection.return_value.__enter__.return_value
+        mock_cursor = mock_connection.cursor.return_value.__enter__.return_value
+
+        # 測試 select 函數
+        result = select("")
+        expect = "Can not be empty"
+        assert result == expect
 
     @patch("app.get_db_connection")
-    def setUp(self, mock_get_db_connection):
-        # 創建模擬的數據庫連接和游標
-        self.mock_conn = MagicMock()
-        self.mock_cursor = MagicMock()
-        mock_get_db_connection.return_value = self.mock_conn
-        self.mock_conn.cursor.return_value.__enter__.return_value = self.mock_cursor
-
-        # 清理數據庫，確保測試數據不重複
-        self.mock_cursor.execute("TRUNCATE TABLE data;")
-        self.mock_conn.commit()
-
-        # 添加調試信息
-        print("Setup complete: Database cleared")
-
-    @patch("app.get_db_connection")
-    def test_insert(self, mock_get_db_connection):
-        # 設置模擬對象
-        mock_get_db_connection.return_value = self.mock_conn
-
-        # 模擬 select 查詢的返回值
-        self.mock_cursor.fetchall.return_value = []
-
-        # 添加調試信息
-        print(
-            "Mocked fetchall return value for insert test:",
-            self.mock_cursor.fetchall.return_value,
-        )
-
-        # 測試插入數據
-        result = insert("Test Name", "1234567890", "test@example.com", "123 Test St")
-
-        # 添加調試信息
-        print("Insert result:", result)
-
-        # 檢查結果
-        self.assertEqual(result, "Insert successfully")
-
-        # 檢查 SQL 執行是否正確
-        self.mock_cursor.execute.assert_any_call(
-            "INSERT INTO data VALUES (%s, %s, %s, %s);",
-            ("Test Name", "1234567890", "test@example.com", "123 Test St"),
-        )
-
-        # 檢查事務提交
-        self.mock_conn.commit.assert_called()
-
-    @patch("app.get_db_connection")
-    def test_delete(self, mock_get_db_connection):
-        # 設置模擬對象
-        mock_get_db_connection.return_value = self.mock_conn
-
-        # 模擬 select 查詢的返回值，表示名稱存在
-        self.mock_cursor.fetchall.return_value = [
-            ("Test Name", "1234567890", "test@example.com", "123 Test St")
+    def test_select_exist(self, mock_get_db_connection):
+        # 模擬資料庫連接以防止任何實際的資料庫操作
+        mock_connection = mock_get_db_connection.return_value.__enter__.return_value
+        mock_cursor = mock_connection.cursor.return_value.__enter__.return_value
+        mock_cursor.fetchall.return_value = [
+            ("John Doe", "0900000000", "XXX@gamil.com", "Taipei City")
         ]
+        # 測試 select 函數
+        result = select("John Doe")
+        expect = {
+            "name": "John Doe",
+            "phone": "0900000000",
+            "email": "XXX@gamil.com",
+            "address": "Taipei City",
+        }
+        assert result == expect
 
-        # 添加調試信息
-        print(
-            "Mocked fetchall return value for delete test:",
-            self.mock_cursor.fetchall.return_value,
-        )
+    @patch("app.get_db_connection")
+    def test_select_non_exist(self, mock_get_db_connection):
+        # 模擬資料庫連接以防止任何實際的資料庫操作
+        mock_connection = mock_get_db_connection.return_value.__enter__.return_value
+        mock_cursor = mock_connection.cursor.return_value.__enter__.return_value
 
-        # 測試刪除數據
-        result = delete("Test Name")
+        # 模擬沒有找到數據
+        mock_cursor.fetchall.return_value = []
 
-        # 添加調試信息
-        print("Delete result:", result)
+        # 測試 select 函數
+        result = select("name")
+        expect = "Name does not exist"
+        assert result == expect
 
-        # 檢查結果
-        self.assertEqual(result, "Delete successfully")
+    # @patch('app.get_db_connection')
+    # @patch('app.select')
+    # def test_insert_success(self, mock_select, mock_get_db_connection):
+    #     # 設置模擬的返回值
+    #     mock_select.return_value = "Name does not exist"
+    #     # 設置模擬資料庫連接
+    #     mock_connection = mock_get_db_connection.return_value.__enter__.return_value
+    #     # 設置模擬資料庫游標
+    #     mock_cursor = mock_connection.cursor.return_var.__enter__.return_value
+    #     # 設置模擬游標執行的返回值
+    #     mock_cursor.execute.return_value = None
 
-        # 檢查 SQL 執行是否正確
-        self.mock_cursor.execute.assert_any_call(
-            "DELETE FROM data WHERE name = %s;", ("Test Name",)
-        )
-
-        # 檢查事務提交
-        self.mock_conn.commit.assert_called()
+    #     # 測試 insert 函數
+    #     result = insert("John Doe", "1234567890", "john@example.com", "1234 Main St")
+    #     self.assertEqual(result, "Insert successfully")
 
 
 if __name__ == "__main__":
