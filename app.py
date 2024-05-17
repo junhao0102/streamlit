@@ -1,21 +1,21 @@
 import psycopg2
 import streamlit as st
+from logger import logger
 
-# 连接到 PostgreSQL 数据库
-conn = psycopg2.connect(
+
+def get_db_connection():
+    """建立並返回一個新的數據庫連接。"""
+    return psycopg2.connect(
         dbname="mydb",
         user="postgres",
         password="mysecretpassword",
         host="db",
-        port="5432"
+        port="5432",
     )
 
-# 创建游标对象
-cursor = conn.cursor()
-    
-#init
+
 def create_table():
-    # 创建表
+    """創建數據表，如果表不存在"""
     create_sql = """
         CREATE TABLE IF NOT EXISTS data(
             name VARCHAR(20),
@@ -24,75 +24,96 @@ def create_table():
             address VARCHAR(50)
         )
     """
-    cursor.execute(create_sql)
-    # 提交事务
-    conn.commit()
-    # 关闭游标和连接
-    cursor.close()
-    conn.close()
-    print("initial successfully")
-    
-# 查询数据 (name為parameter)
-def select(name):
-    cursor.execute(f"SELECT * FROM data WHERE name = '{name}';")
-    data = cursor.fetchall()
-    if name == '':
-        return 'Can not be empty'
-    elif data == []:
-        return 'Name is not exist'
-    else:
-        print(data)
-        return {'name': data[0][0], 'phone': data[0][1], 'email': data[0][2], 'address': data[0][3]}   
-# 插入数据
-def insert (name, phone, email, address):
-   _name = select(name)
-   if name == '' or phone == '' or email == '' or address == '':
-         return 'Any block cannot be empty'
-   elif _name == 'Name is not exist':
-         cursor.execute(f"INSERT INTO data VALUES ('{name}', '{phone}', '{email}', '{address}');")
-         return 'insert successfully'
-   else:
-        return 'Name is exist'
-   
-    
-# 刪除数据(name為parameter)
-def delete(name):
-    _name = select(name)
-    if name == '':
-        return 'Can not be empty'
-    elif _name == 'Name is not exist':
-        return 'Name is not exist'
-    else:
-        cursor.execute(f"DELETE FROM data WHERE name = '{name}';")
-        return 'delete successfully'
-  
-                
-#streamlit
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(create_sql)
+            conn.commit()
+    logger.info("create table successful!")
 
- 
-#插入資料
-st.title("Inter your information!")
-name = st.text_input("Name",key="insert_name")
-phone = st.text_input("Phone",key="insert_phone")
-email = st.text_input("Email",key="insert_email")
-address = st.text_input("Address",key="insert_address")
-button_insert = st.button("INSERT")
-if button_insert:
-    st.write(insert(name, phone, email, address))
-   
-#刪除資料  
-st.title("Delete your information!")
-delete_name = st.text_input("Name",key="delete_name")
-button_delete = st.button("DELETE")
-if button_delete:
-    st.write(delete(delete_name))
-    
-#查詢資料  
-st.title("Find your information!")
-find_name = st.text_input("Name",key="find_name")
-button_SELECT = st.button("SELECT") 
-if button_SELECT:
-    st.write(select(find_name))
-    
+
+def select(name):
+    """根據名稱查詢數據。"""
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"SELECT * FROM data WHERE name = %s;", (name,))
+            data = cursor.fetchall()
+            if not name:
+                logger.error("Name cannot be empty")
+                return "Can not be empty"
+            elif not data:
+                logger.error("Name does not exist")
+                return "Name does not exist"
+            else:
+                logger.info("select successful!")
+                return {
+                    "name": data[0][0],
+                    "phone": data[0][1],
+                    "email": data[0][2],
+                    "address": data[0][3],
+                }
+
+
+def insert(name, phone, email, address):
+    """插入數據"""
+    if not name or not phone or not email or not address:
+        logger.error("Any field cannot be empty")
+        return "Any field cannot be empty"
+
+    if select(name) == "Name does not exist":
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO data VALUES (%s, %s, %s, %s);",
+                    (name, phone, email, address),
+                )
+                conn.commit()
+        logger.info("insert successful!")
+        return "Insert successfully"
+    else:
+        logger.error("Name already exists")
+        return "Name already exists"
+
+
+def delete(name):
+    """刪除數據"""
+    if not name:
+        logger.error("Name cannot be empty")
+        return "Name cannot be empty"
+
+    if select(name) == "Name does not exist":
+        logger.error("Name does not exist")
+        return "Name does not exist"
+    else:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("DELETE FROM data WHERE name = %s;", (name,))
+                conn.commit()
+        logger.info("delete successful!")
+        return "Delete successfully"
+
+
+# 初始化數據表
 if __name__ == "__main__":
     create_table()
+
+# Streamlit 用戶界面
+st.title("Enter your information!")
+name = st.text_input("Name", key="insert_name")
+phone = st.text_input("Phone", key="insert_phone")
+email = st.text_input("Email", key="insert_email")
+address = st.text_input("Address", key="insert_address")
+button_insert = st.button("INSERT")
+if button_insert:
+    st.info(insert(name, phone, email, address))
+
+st.title("Delete your information!")
+delete_name = st.text_input("Name", key="delete_name")
+button_delete = st.button("DELETE")
+if button_delete:
+    st.info(delete(delete_name))
+
+st.title("Find your information!")
+find_name = st.text_input("Name", key="find_name")
+button_select = st.button("SELECT")
+if button_select:
+    st.info(select(find_name))
