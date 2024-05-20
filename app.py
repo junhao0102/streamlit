@@ -50,7 +50,7 @@ def select(name):
                     "phone": data[0][1],
                     "email": data[0][2],
                     "address": data[0][3],
-                }   
+                }
 
 
 def insert(name, phone, email, address):
@@ -92,28 +92,31 @@ def delete(name):
         return "Delete successfully"
 
 
+# Streamlit App
+def run_app():
+    st.title("Enter your information!")
+    name = st.text_input("Name", key="insert_name")
+    phone = st.text_input("Phone", key="insert_phone")
+    email = st.text_input("Email", key="insert_email")
+    address = st.text_input("Address", key="insert_address")
+    button_insert = st.button("INSERT")
+    if button_insert:
+        st.info(insert(name, phone, email, address))
+
+    st.title("Delete your information!")
+    delete_name = st.text_input("Name", key="delete_name")
+    button_delete = st.button("DELETE")
+    if button_delete:
+        st.info(delete(delete_name))
+
+    st.title("Find your information!")
+    find_name = st.text_input("Name", key="find_name")
+    button_select = st.button("SELECT")
+    if button_select:
+        st.info(select(find_name))
+
+
 # 初始化數據表
 if __name__ == "__main__":
     create_table()
-
-# Streamlit 用戶界面
-st.title("Enter your information!")
-name = st.text_input("Name", key="insert_name")
-phone = st.text_input("Phone", key="insert_phone")
-email = st.text_input("Email", key="insert_email")
-address = st.text_input("Address", key="insert_address")
-button_insert = st.button("INSERT")
-if button_insert:
-    st.info(insert(name, phone, email, address))
-
-st.title("Delete your information!")
-delete_name = st.text_input("Name", key="delete_name")
-button_delete = st.button("DELETE")
-if button_delete:
-    st.info(delete(delete_name))
-
-st.title("Find your information!")
-find_name = st.text_input("Name", key="find_name")
-button_select = st.button("SELECT")
-if button_select:
-    st.info(select(find_name))
+    run_app()
