@@ -51,4 +51,7 @@ jobs:
             pip3 install docker-compose==1.29.2  # 使用相容的版本
 
       - name: Start services
-        run: docker-compose up -d
+        uses: docker://docker/compose:1.29.2
+        with:
+            args: up -d
+          
