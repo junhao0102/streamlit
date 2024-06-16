@@ -35,7 +35,7 @@ jobs:
     needs: test
     services:
       docker:
-        image: docker:20.10.7
+        image: docker:19.03.12-dind
         options: --privileged
     steps:
       - name: Checkout code
@@ -46,8 +46,9 @@ jobs:
 
       - name: Install docker-compose
         run: |
-            sudo apt-get update && sudo apt-get install -y python3-pip
-            sudo pip3 install docker-compose==1.29.2  
+            sudo apt-get update
+            sudo apt-get install -y python3-pip
+            pip3 install docker-compose
 
       - name: Start services
         run: docker-compose up -d
