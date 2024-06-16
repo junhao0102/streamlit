@@ -1,16 +1,16 @@
 FROM python:3.10.13-slim-bullseye
 
-# 设置工作目录
+# 設置工作目錄
 WORKDIR /app
 
-# 复制应用程序代码和依赖文件
+# 複製當前目錄下的所有文件到工作目錄
 COPY . /app
 
 
-# 将pip升级到最新版本
+# 更新 pip
 RUN pip install --upgrade pip
 
-# 安装 Python 依赖
+# 安裝依賴
 RUN pip install -r requirements.txt
 
 

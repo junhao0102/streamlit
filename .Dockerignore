@@ -1,0 +1,5 @@
+__pycache__/
+.dockerignore
+.gitlab-ci.yml
+Dockerfile
+.pytest_cache/
