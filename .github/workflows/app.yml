@@ -48,7 +48,7 @@ jobs:
         run: |
             sudo apt-get update
             sudo apt-get install -y python3-pip
-            pip3 install docker-compose
+            pip3 install docker-compose==1.29.2  # 使用相容的版本
 
       - name: Start services
         run: docker-compose up -d
